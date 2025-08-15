@@ -12,13 +12,13 @@ class BMICalculatorApp:
         self.root.title("Advanced BMI Calculator")
         self.root.geometry("1000x700")
 
-        # DB + styles + UI
+     
         self.setup_database()
         self.setup_styles()
         self.create_main_ui()
 
-        # Load users & init
-        self.user_map = {}   # name -> (id, name)
+       
+        self.user_map = {} 
         self.user_list = []
         self.current_user = None
         self.load_users()
@@ -62,25 +62,24 @@ class BMICalculatorApp:
         self.conn.commit()
 
     def create_main_ui(self):
-        # Main container
+       
         main_frame = ttk.Frame(self.root)
         main_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
         main_frame.columnconfigure(0, weight=1)
         main_frame.columnconfigure(1, weight=2)
         main_frame.rowconfigure(0, weight=1)
 
-        # Left: input
+       
         input_frame = ttk.LabelFrame(main_frame, text="Input Data", padding=10)
         input_frame.grid(row=0, column=0, padx=5, pady=5, sticky="nsew")
         for i in range(3):
             input_frame.columnconfigure(i, weight=1)
 
-        # Right: results
+       
         result_frame = ttk.LabelFrame(main_frame, text="Results", padding=10)
         result_frame.grid(row=0, column=1, padx=5, pady=5, sticky="nsew")
-        result_frame.rowconfigure(3, weight=1)  # figure + history expand
-
-        # User selection
+        result_frame.rowconfigure(3, weight=1) 
+      
         self.user_var = tk.StringVar()
         ttk.Label(input_frame, text="Select User:").grid(row=0, column=0, sticky="w", pady=(0,5))
         self.user_combobox = ttk.Combobox(input_frame, textvariable=self.user_var, state="readonly")
@@ -90,7 +89,7 @@ class BMICalculatorApp:
         ttk.Button(input_frame, text="New User", command=self.add_new_user)\
             .grid(row=1, column=2, padx=(5,0), sticky="e")
 
-        # Inputs
+        
         ttk.Label(input_frame, text="Weight (kg):").grid(row=2, column=0, sticky="w")
         self.weight_entry = ttk.Entry(input_frame)
         self.weight_entry.grid(row=3, column=0, sticky="ew", pady=(0,10))
@@ -103,26 +102,26 @@ class BMICalculatorApp:
         self.notes_entry = tk.Text(input_frame, height=4, width=30)
         self.notes_entry.grid(row=5, column=0, columnspan=3, sticky="nsew", pady=(0,10))
 
-        # Buttons
+      
         ttk.Button(input_frame, text="Calculate BMI", command=self.calculate_bmi)\
             .grid(row=6, column=0, pady=10, sticky="ew")
         ttk.Button(input_frame, text="Clear", command=self.clear_fields)\
             .grid(row=6, column=1, pady=10, sticky="ew")
 
-        # Results display
+       
         self.result_label = ttk.Label(result_frame, text="BMI: --", style="Result.TLabel")
         self.result_label.grid(row=0, column=0, sticky="w", pady=(0,10))
 
-        # Use tk.Label here so color updates always apply
+       
         self.category_label = tk.Label(result_frame, text="Category: --", font=('Arial', 16))
         self.category_label.grid(row=1, column=0, sticky="w", pady=(0,10))
 
-        # Figure area
+       
         self.figure_frame = ttk.Frame(result_frame)
         self.figure_frame.grid(row=2, column=0, sticky="nsew", pady=(0,10))
         result_frame.rowconfigure(2, weight=1)
 
-        # History table
+       
         ttk.Label(result_frame, text="Measurement History").grid(row=3, column=0, sticky="w")
         self.history_tree = ttk.Treeview(
             result_frame,
@@ -144,7 +143,7 @@ class BMICalculatorApp:
         self.history_tree.column("bmi", width=80, anchor="center")
         self.history_tree.column("category", width=120, anchor="center")
 
-        # Export
+       
         ttk.Button(result_frame, text="Export History", command=self.export_history)\
             .grid(row=5, column=0, pady=10, sticky="e")
 
@@ -155,7 +154,7 @@ class BMICalculatorApp:
         self.user_map = {name: (uid, name) for uid, name in users}
         names = [u[1] for u in users]
         self.user_combobox['values'] = names
-        # Keep selection if possible
+      
         if self.current_user:
             name = self.current_user[1]
             if name in names:
@@ -171,11 +170,11 @@ class BMICalculatorApp:
         if not self.current_user:
             return
 
-        # Clear figure widgets
+       
         for widget in self.figure_frame.winfo_children():
             widget.destroy()
 
-        # Load measurements for current user
+       
         self.cursor.execute('''
             SELECT id, weight, height, bmi, date, notes
             FROM measurements
@@ -184,7 +183,7 @@ class BMICalculatorApp:
         ''', (self.current_user[0],))
         measurements = self.cursor.fetchall()
 
-        # Update history table
+       
         self.history_tree.delete(*self.history_tree.get_children())
         for measure in measurements:
             bmi_val = measure[3]
@@ -195,26 +194,25 @@ class BMICalculatorApp:
                 values=(measure[4], measure[1], measure[2], f"{bmi_val:.1f}", category)
             )
 
-        # Trend chart needs chronological order left->right
+      
         if len(measurements) >= 2:
-            self.create_trend_chart(measurements[::-1])  # reverse to ascending time
+            self.create_trend_chart(measurements[::-1])  
 
     def create_trend_chart(self, measurements):
-        # Prepare data
-        # measurements: list of tuples (..., bmi, date, ...)
+        
         dates = []
         bmis = []
         for m in measurements:
             date_str = m[4]
-            # Accept both "YYYY-MM-DD HH:MM:SS" and ISO-like forms
+           
             try:
                 dt = datetime.datetime.strptime(date_str, '%Y-%m-%d %H:%M:%S')
             except ValueError:
-                # Fallback for possible fractional seconds or other formats
+              
                 try:
                     dt = datetime.datetime.fromisoformat(date_str)
                 except ValueError:
-                    # If parsing fails, skip that point
+                  
                     continue
             dates.append(dt)
             bmis.append(m[3])
@@ -222,7 +220,7 @@ class BMICalculatorApp:
         if len(dates) < 2:
             return
 
-        # Create figure
+        
         fig, ax = plt.subplots(figsize=(6, 3))
         ax.plot(dates, bmis, marker='o')
         ax.set_title('BMI Trend Over Time')
@@ -230,23 +228,23 @@ class BMICalculatorApp:
         ax.grid(True)
         fig.autofmt_xdate()
 
-        # Embed in Tkinter
+      
         canvas = FigureCanvasTkAgg(fig, master=self.figure_frame)
         canvas.draw()
         canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True)
 
-        # Prevent figure accumulation in memory
+      
         plt.close(fig)
 
     def classify_bmi(self, bmi):
         if bmi < 18.5:
-            return "Underweight", "#3498db"  # Blue
+            return "Underweight", "#3498db" 
         elif 18.5 <= bmi < 25:
-            return "Normal", "#2ecc71"      # Green
+            return "Normal", "#2ecc71"     
         elif 25 <= bmi < 30:
-            return "Overweight", "#f39c12"  # Orange
+            return "Overweight", "#f39c12" 
         else:
-            return "Obese", "#e74c3c"       # Red
+            return "Obese", "#e74c3c"     
 
     def calculate_bmi(self):
         try:
@@ -258,11 +256,11 @@ class BMICalculatorApp:
             bmi = weight / (height ** 2)
             category, color = self.classify_bmi(bmi)
 
-            # Update result display
+          
             self.result_label.config(text=f"BMI: {bmi:.1f}")
             self.category_label.config(text=f"Category: {category}", fg=color)
 
-            # Save to DB
+          
             notes = self.notes_entry.get("1.0", tk.END).strip()
             if self.current_user:
                 self.cursor.execute('''
@@ -318,7 +316,7 @@ class BMICalculatorApp:
                 messagebox.showerror("Error", "A user with this name already exists.")
                 return
 
-            # Refresh users, select the newly added one, and load data
+           
             self.load_users()
             self.user_combobox.set(name)
             self.current_user = self.user_map.get(name)
@@ -369,3 +367,4 @@ if __name__ == "__main__":
     root = tk.Tk()
     app = BMICalculatorApp(root)
     root.mainloop()
+
